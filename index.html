@@ -3067,7 +3067,9 @@ async function checkLicense(){
     input.classList.remove('invalid'); input.classList.add('valid');
     if(status){status.style.color='var(--teal)';status.textContent=result.msg;}
     // Save to localStorage
-    localStorage.setItem(LIC_STORAGE_KEY, JSON.stringify({code,expiry:result.expiry.toISOString(),savedAt:new Date().toISOString()}));
+    const licData=JSON.stringify({code,expiry:result.expiry.toISOString(),savedAt:new Date().toISOString()});
+    localStorage.setItem(LIC_STORAGE_KEY, licData);
+    setCookie(LIC_STORAGE_KEY, licData, 400);
     setTimeout(()=>{
       hide('license-gate');
       const app=document.querySelector('.app'); if(app) app.style.pointerEvents='';
@@ -3099,10 +3101,28 @@ async function checkLicense(){
   }
 }
 
+// Cookie helper functions for backup storage
+function setCookie(name,value,days){
+  const d=new Date(); d.setTime(d.getTime()+(days*24*60*60*1000));
+  document.cookie=name+'='+encodeURIComponent(value)+';expires='+d.toUTCString()+';path=/;SameSite=Lax';
+}
+function getCookie(name){
+  const n=name+'=';
+  const ca=document.cookie.split(';');
+  for(let c of ca){
+    c=c.trim();
+    if(c.indexOf(n)===0) return decodeURIComponent(c.substring(n.length));
+  }
+  return null;
+}
+
 async function initLicense(){
   // Check saved license on every page load
   try{
-    const saved=localStorage.getItem(LIC_STORAGE_KEY);
+    // Try localStorage first, then cookie as backup
+    let saved=localStorage.getItem(LIC_STORAGE_KEY);
+    if(!saved) saved=getCookie(LIC_STORAGE_KEY);
+    if(saved) localStorage.setItem(LIC_STORAGE_KEY, saved); // sync back
     if(saved){
       const {code}=JSON.parse(saved);
       const result=await validateLicense(code);
@@ -3134,7 +3154,9 @@ async function initLicense(){
       }
     }
   }catch(e){}
-  // No valid license — show landing normally (trial will start on click)
+  // No valid license — show landing
+  const landing=$('landing');
+  if(landing) landing.style.display='flex';
 }
 
 function startFreeTrial(){
