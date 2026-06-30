@@ -3437,6 +3437,15 @@ function showTrialOverlay(){
 // Start trial when user first interacts (adds a piece or runs optimization)
 const _origAddPiece2 = window.addPiece;
 document.addEventListener('click', function startOnClick(){
+  // Only start trial if no valid license
+  try{
+    const saved=localStorage.getItem(LIC_STORAGE_KEY);
+    if(saved){
+      // Has a saved license — don't start trial, let initLicense handle it
+      document.removeEventListener('click', startOnClick);
+      return;
+    }
+  }catch(e){}
   startTrial();
   document.removeEventListener('click', startOnClick);
 }, {once:true});
