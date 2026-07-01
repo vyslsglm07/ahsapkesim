@@ -3118,7 +3118,9 @@ async function checkLicense(){
 // ── Supabase & Google Auth ────────────────────────────────────────────────────
 const SUPABASE_URL = 'https://zvxmciyxdmswzbotrbcn.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_vFMCgzbb70Pn_aOydOR7dw_Cdcx1rCd';
-const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
+});
 
 async function signInWithGoogle(){
   const { error } = await sbClient.auth.signInWithOAuth({
@@ -3424,8 +3426,8 @@ function ldInit(){
 // Start when DOM ready
 document.addEventListener('DOMContentLoaded',()=>{
   setTimeout(ldInit, 500);
-  // Check license on every page load
-  initLicense();
+  // Wait a bit for Supabase to process OAuth callback URL before checking license
+  setTimeout(()=>{ initLicense(); }, 300);
 });
 
 function openVideo(){
