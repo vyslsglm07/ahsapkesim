@@ -877,7 +877,7 @@ table.dt th.sort-desc::after{content:' ↓';color:var(--blue)}
   <button onclick="showLicenseFromLanding()" style="background:transparent;border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.65);border-radius:50px;padding:10px 30px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;margin-top:10px;margin-bottom:4px;transition:all .2s" onmouseover="this.style.borderColor='rgba(255,255,255,.5)';this.style.color='#fff'" onmouseout="this.style.borderColor='rgba(255,255,255,.2)';this.style.color='rgba(255,255,255,.65)'">🔑 Lisans Kodum Var</button>
 
   <div class="landing-trial-note">Lisans kodu yoksa 10 dakika ücretsiz deneyebilirsiniz</div>
-  <div style="margin-top:20px;font-size:10px;color:rgba(255,255,255,.2)">© 2025 Veysel Sağlam · ahsapkesim.online · v2026.07.01-0840</div>
+  <div style="margin-top:20px;font-size:10px;color:rgba(255,255,255,.2)">© 2025 Veysel Sağlam · ahsapkesim.online · v2026.07.01-0845</div>
 </div>
 
 <!-- SUPPORT BUTTON (shown after entering app) -->
@@ -902,7 +902,7 @@ table.dt th.sort-desc::after{content:' ↓';color:var(--blue)}
 </svg>
         <div>
           <div style="font-size:13px;font-weight:700;letter-spacing:-.3px">Ahşap Kesim</div>
-          <div style="font-size:9px;font-weight:600;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin-top:-1px">Pro <span style="opacity:.5;text-transform:none;font-weight:400;letter-spacing:0">· v2026.07.01-0840</span></div>
+          <div style="font-size:9px;font-weight:600;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin-top:-1px">Pro <span style="opacity:.5;text-transform:none;font-weight:400;letter-spacing:0">· v2026.07.01-0845</span></div>
         </div>
       </div>
       <div style="display:flex;gap:4px">
@@ -2388,12 +2388,12 @@ function saveProject(){
         <span>⏰ Saat: <strong>${new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}</strong></span>
       </div>
     </div>
-    <div id="cloud-save-option" style="display:none;align-items:center;gap:8px;margin-bottom:14px;background:var(--blue-bg);border-radius:var(--r);padding:10px 12px">
-      <input type="checkbox" id="save-to-cloud" checked style="width:16px;height:16px;cursor:pointer">
-      <label for="save-to-cloud" style="font-size:12px;color:var(--text2);cursor:pointer;flex:1">☁️ Ayrıca buluta kaydet (hesabımla eriş)</label>
+    <div id="cloud-save-info" style="display:none;align-items:center;gap:8px;margin-bottom:14px;background:var(--blue-bg);border-radius:var(--r);padding:10px 12px">
+      <span style="font-size:16px">☁️</span>
+      <span style="font-size:12px;color:var(--text2);flex:1">Hesabınıza kaydedilecek, istediğiniz yerden erişebilirsiniz.</span>
     </div>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-blue" style="flex:1;justify-content:center" onclick="doSaveFile()">💾 Kaydet</button>
+      <button class="btn btn-blue" style="flex:1;justify-content:center" id="save-btn-main" onclick="doSaveFile()">💾 Kaydet</button>
       <button class="btn" onclick="document.getElementById('save-modal').remove()">İptal</button>
     </div>
   </div>`;
@@ -2408,11 +2408,17 @@ function saveProject(){
   if(mc) mc.appendChild(modal);
   setTimeout(()=>{ const el=$('save-project-name'); if(el){el.focus();el.select();} },50);
 
-  // Show cloud save option if logged in with Google
+  // If logged in with Google, save to cloud only (hide filename/download details)
   sbClient.auth.getSession().then(({data:{session}})=>{
     if(session && session.user && session.user.email){
-      const opt=$('cloud-save-option');
+      const opt=$('cloud-save-info');
       if(opt) opt.style.display='flex';
+      // Hide local file download UI
+      const fnField=$('save-filename'); 
+      if(fnField){ const fg=fnField.closest('.field'); if(fg) fg.style.display='none'; }
+      window._saveIsCloudOnly = true;
+    } else {
+      window._saveIsCloudOnly = false;
     }
   });
 }
@@ -2445,21 +2451,20 @@ function doSaveFile(){
     extraCosts:extraCosts
   };
 
-  const json=JSON.stringify(data,null,2);
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));
-  a.download=fname+'.ahsp';
-  a.click();
-
-  // Save to cloud if checkbox is checked
-  const cloudCheckbox=$('save-to-cloud');
-  if(cloudCheckbox && cloudCheckbox.checked){
+  if(window._saveIsCloudOnly){
+    // Cloud only — no local download
     saveToCloud(pname, data);
+    const modal=$('save-modal'); if(modal) modal.remove();
+  } else {
+    // Local download only (not logged in)
+    const json=JSON.stringify(data,null,2);
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));
+    a.download=fname+'.ahsp';
+    a.click();
+    const modal=$('save-modal'); if(modal) modal.remove();
+    notify('✅ Kaydedildi: '+fname+'.ahsp');
   }
-
-  // Close modal
-  const modal=$('save-modal'); if(modal) modal.remove();
-  notify('✅ Kaydedildi: '+fname+'.ahsp');
 }
 
 async function saveToCloud(projeAdi, data){
@@ -2476,7 +2481,7 @@ async function saveToCloud(projeAdi, data){
       console.error('Cloud save error:', error);
       notify('⚠️ Bulut kaydı başarısız: '+error.message);
     } else {
-      notify('☁️ Buluta da kaydedildi!');
+      notify('☁️ "'+projeAdi+'" bulutunuza kaydedildi');
     }
   }catch(e){
     console.error('Cloud save error:', e);
