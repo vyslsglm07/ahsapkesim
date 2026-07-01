@@ -877,7 +877,7 @@ table.dt th.sort-desc::after{content:' ↓';color:var(--blue)}
   <button onclick="showLicenseFromLanding()" style="background:transparent;border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.65);border-radius:50px;padding:10px 30px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;margin-top:10px;margin-bottom:4px;transition:all .2s" onmouseover="this.style.borderColor='rgba(255,255,255,.5)';this.style.color='#fff'" onmouseout="this.style.borderColor='rgba(255,255,255,.2)';this.style.color='rgba(255,255,255,.65)'">🔑 Lisans Kodum Var</button>
 
   <div class="landing-trial-note">Lisans kodu yoksa 10 dakika ücretsiz deneyebilirsiniz</div>
-  <div style="margin-top:20px;font-size:10px;color:rgba(255,255,255,.2)">© 2025 Veysel Sağlam · ahsapkesim.online · v2026.07.01-0657</div>
+  <div style="margin-top:20px;font-size:10px;color:rgba(255,255,255,.2)">© 2025 Veysel Sağlam · ahsapkesim.online · v2026.07.01-0728</div>
 </div>
 
 <!-- SUPPORT BUTTON (shown after entering app) -->
@@ -3121,6 +3121,17 @@ const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
 });
 
+async function signOutGoogle(){
+  try{
+    await sbClient.auth.signOut();
+    localStorage.removeItem(LIC_STORAGE_KEY);
+    location.reload();
+  }catch(e){
+    console.error('Sign out error:', e);
+    location.reload();
+  }
+}
+
 async function signInWithGoogle(){
   const { error } = await sbClient.auth.signInWithOAuth({
     provider: 'google',
@@ -3167,7 +3178,7 @@ async function initGoogleAuth(){
     if(bar){
       bar.style.display='flex';
       bar.style.background='linear-gradient(135deg,#064e3b,#065f46)';
-      bar.innerHTML='<div style="display:flex;align-items:center;gap:8px;font-size:11px"><span>✅ '+result.email+'</span><span style="opacity:.7">('+result.daysLeft+' gün kaldı)</span></div><span style="font-size:10px;opacity:.6">Ahşap Kesim Pro</span>';
+      bar.innerHTML='<div style="display:flex;align-items:center;gap:8px;font-size:11px"><span>✅ '+result.email+'</span><span style="opacity:.7">('+result.daysLeft+' gün kaldı)</span></div><div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;opacity:.6">Ahşap Kesim Pro</span><button onclick="signOutGoogle()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:6px;padding:3px 10px;font-size:10px;cursor:pointer;font-family:sans-serif">Çıkış Yap</button></div>';
     }
     return true;
   } else {
