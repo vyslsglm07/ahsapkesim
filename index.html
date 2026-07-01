@@ -877,7 +877,7 @@ table.dt th.sort-desc::after{content:' ↓';color:var(--blue)}
   <button onclick="showLicenseFromLanding()" style="background:transparent;border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.65);border-radius:50px;padding:10px 30px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;margin-top:10px;margin-bottom:4px;transition:all .2s" onmouseover="this.style.borderColor='rgba(255,255,255,.5)';this.style.color='#fff'" onmouseout="this.style.borderColor='rgba(255,255,255,.2)';this.style.color='rgba(255,255,255,.65)'">🔑 Lisans Kodum Var</button>
 
   <div class="landing-trial-note">Lisans kodu yoksa 10 dakika ücretsiz deneyebilirsiniz</div>
-  <div style="margin-top:20px;font-size:10px;color:rgba(255,255,255,.2)">© 2025 Veysel Sağlam · ahsapkesim.online · v2026.07.01-0845</div>
+  <div style="margin-top:20px;font-size:10px;color:rgba(255,255,255,.2)">© 2025 Veysel Sağlam · ahsapkesim.online · v2026.07.01-0906</div>
 </div>
 
 <!-- SUPPORT BUTTON (shown after entering app) -->
@@ -902,7 +902,7 @@ table.dt th.sort-desc::after{content:' ↓';color:var(--blue)}
 </svg>
         <div>
           <div style="font-size:13px;font-weight:700;letter-spacing:-.3px">Ahşap Kesim</div>
-          <div style="font-size:9px;font-weight:600;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin-top:-1px">Pro <span style="opacity:.5;text-transform:none;font-weight:400;letter-spacing:0">· v2026.07.01-0845</span></div>
+          <div style="font-size:9px;font-weight:600;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin-top:-1px">Pro <span style="opacity:.5;text-transform:none;font-weight:400;letter-spacing:0">· v2026.07.01-0906</span></div>
         </div>
       </div>
       <div style="display:flex;gap:4px">
@@ -1049,14 +1049,41 @@ table.dt th.sort-desc::after{content:' ↓';color:var(--blue)}
     <div class="section">
       <div class="slabel">Birim Fiyatlar</div>
       <div class="fg">
-        <div class="field"><label>Plaka (₺/adet)</label><input type="number" id="board-price" value="850" min="0" step="50"></div>
-        <div class="field"><label>İşçilik (₺/saat)</label><input type="number" id="labor-price" value="300" min="0" step="50"></div>
+        <div class="field"><label>Plaka (₺/adet)</label><input type="number" id="board-price" value="850" min="0" step="50" oninput="renderCostBreakdown()"></div>
+        <div class="field"><label>İşçilik (₺/saat)</label><input type="number" id="labor-price" value="300" min="0" step="50" oninput="renderCostBreakdown()"></div>
       </div>
     </div>
     <div class="section">
       <div class="slabel">Ek Maliyetler</div>
       <div id="extra-costs-list"></div>
       <button class="btn btn-full" onclick="addExtraCost()" style="margin-top:8px">+ Ekle</button>
+    </div>
+    <div class="section">
+      <div class="slabel">İskonto / Kâr Marjı</div>
+      <div class="fg">
+        <div class="field"><label>İskonto (%)</label><input type="number" id="discount-pct" value="0" min="0" max="100" step="1" oninput="renderCostBreakdown()"></div>
+        <div class="field"><label>Kâr Marjı (%)</label><input type="number" id="margin-pct" value="0" min="0" max="500" step="1" oninput="renderCostBreakdown()"></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="slabel">KDV</div>
+      <div class="fg">
+        <div class="field"><label>KDV Oranı (%)</label><input type="number" id="vat-pct" value="20" min="0" max="100" step="1" oninput="renderCostBreakdown()"></div>
+        <div class="field">
+          <label>KDV Durumu</label>
+          <select id="vat-mode" onchange="renderCostBreakdown()" style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:var(--r);font-size:13px;background:var(--bg2);color:var(--text)">
+            <option value="haric">Fiyatlara Hariç</option>
+            <option value="dahil">Fiyatlara Dahil</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="slabel">Teklif No</div>
+      <div class="field">
+        <input type="text" id="teklif-no" placeholder="Otomatik oluşturulacak" readonly style="background:var(--bg3);cursor:pointer" onclick="generateTeklifNo()">
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px">Yeni numara için tıklayın</div>
     </div>
     <div class="section" id="cost-result-section" style="display:none">
       <div class="slabel">Toplam Maliyet</div>
@@ -1104,6 +1131,7 @@ table.dt th.sort-desc::after{content:' ↓';color:var(--blue)}
           <button class="report-item" onclick="doQRSheet()">📱 QR Kod Sayfası</button>
           <button class="report-item" onclick="doEmailReport()">✉️ E-posta ile Gönder</button>
           <button class="report-item" onclick="doPDFWithLogo()">🏢 Firma Logolu PDF Teklif</button>
+          <button class="report-item" onclick="doPieceLabels()">🏷️ Parça Etiketleri Yazdır</button>
         </div>
       </div>
     </div>
@@ -1300,7 +1328,11 @@ function showPanel(id,btn){
   if(panel) panel.classList.add('active');
   if(btn) btn.classList.add('active');
   if(id==='kenar') renderEbList();
-  if(id==='maliyet') renderCostBreakdown();
+  if(id==='maliyet'){
+    renderCostBreakdown();
+    const tno=$('teklif-no');
+    if(tno && !tno.value) generateTeklifNo();
+  }
   if(id==='stok') renderStockList();
 }
 
@@ -2180,11 +2212,7 @@ function renderExtraCosts(){
     </div>`).join('');
 }
 
-function renderCostBreakdown(){
-  const sec=$('cost-result-section'), el=$('cost-breakdown');
-  if(!sec||!el) return;
-  if(!boards.length){sec.style.display='none';return;}
-  sec.style.display='block';
+function getFullCostBreakdown(){
   const boardPrice=val('board-price',850);
   const laborPrice=val('labor-price',300);
   const ebPrice   =val('eb-price',8);
@@ -2194,13 +2222,69 @@ function renderCostBreakdown(){
   const laborCost =(s.cutMin/60)*laborPrice;
   const ebCost    =ebData.totalMeters*ebPrice;
   const extraTotal=extraCosts.reduce((s,c)=>s+c.amount,0);
-  const grand     =boardCost+laborCost+ebCost+extraTotal;
-  el.innerHTML=`
-    <div class="cost-row"><span>Plaka (${boards.length} × ${boardPrice.toLocaleString('tr-TR')}₺)</span><span>${boardCost.toLocaleString('tr-TR')} ₺</span></div>
-    <div class="cost-row"><span>İşçilik (${Math.round(s.cutMin)} dk)</span><span>${laborCost.toFixed(0)} ₺</span></div>
-    <div class="cost-row"><span>Kenar bant (${ebData.totalMeters.toFixed(2)} m)</span><span>${ebCost.toFixed(0)} ₺</span></div>
+  const subtotal  =boardCost+laborCost+ebCost+extraTotal;
+
+  const discountPct=val('discount-pct',0);
+  const marginPct  =val('margin-pct',0);
+  const vatPct     =val('vat-pct',20);
+  const vatMode    =sval('vat-mode','haric');
+
+  const afterDiscount = subtotal * (1 - discountPct/100);
+  const afterMargin = afterDiscount * (1 + marginPct/100);
+
+  let vatAmount, grandTotal, netBeforeVat;
+  if(vatMode==='dahil'){
+    // Prices already include VAT — extract it
+    netBeforeVat = afterMargin / (1 + vatPct/100);
+    vatAmount = afterMargin - netBeforeVat;
+    grandTotal = afterMargin;
+  } else {
+    // VAT added on top
+    netBeforeVat = afterMargin;
+    vatAmount = afterMargin * (vatPct/100);
+    grandTotal = afterMargin + vatAmount;
+  }
+
+  return {boardCost,laborCost,ebCost,extraTotal,subtotal,discountPct,marginPct,
+    afterDiscount,afterMargin,vatPct,vatMode,vatAmount,netBeforeVat,grandTotal,
+    boardsCount:boards.length,boardPrice,cutMin:s.cutMin,ebMeters:ebData.totalMeters};
+}
+
+function renderCostBreakdown(){
+  const sec=$('cost-result-section'), el=$('cost-breakdown');
+  if(!sec||!el) return;
+  if(!boards.length){sec.style.display='none';return;}
+  sec.style.display='block';
+  const b = getFullCostBreakdown();
+  const fmt=n=>n.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  let rows = `
+    <div class="cost-row"><span>Plaka (${b.boardsCount} × ${b.boardPrice.toLocaleString('tr-TR')}₺)</span><span>${b.boardCost.toLocaleString('tr-TR')} ₺</span></div>
+    <div class="cost-row"><span>İşçilik (${Math.round(b.cutMin)} dk)</span><span>${b.laborCost.toFixed(0)} ₺</span></div>
+    <div class="cost-row"><span>Kenar bant (${b.ebMeters.toFixed(2)} m)</span><span>${b.ebCost.toFixed(0)} ₺</span></div>
     ${extraCosts.map(c=>`<div class="cost-row"><span>${c.label}</span><span>${c.amount.toLocaleString('tr-TR')} ₺</span></div>`).join('')}
-    <div class="cost-total"><span>Genel Toplam</span><span>${grand.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})} ₺</span></div>`;
+    <div class="cost-row" style="border-top:1px solid var(--border);padding-top:6px;margin-top:2px"><span>Ara Toplam</span><span>${fmt(b.subtotal)} ₺</span></div>`;
+
+  if(b.discountPct>0){
+    rows += `<div class="cost-row" style="color:var(--red)"><span>İskonto (%${b.discountPct})</span><span>-${fmt(b.subtotal-b.afterDiscount)} ₺</span></div>`;
+  }
+  if(b.marginPct>0){
+    rows += `<div class="cost-row" style="color:var(--teal)"><span>Kâr Marjı (%${b.marginPct})</span><span>+${fmt(b.afterMargin-b.afterDiscount)} ₺</span></div>`;
+  }
+  rows += `<div class="cost-row"><span>KDV Hariç Tutar</span><span>${fmt(b.netBeforeVat)} ₺</span></div>`;
+  rows += `<div class="cost-row"><span>KDV (%${b.vatPct}${b.vatMode==='dahil'?' - dahil':''})</span><span>${fmt(b.vatAmount)} ₺</span></div>`;
+  rows += `<div class="cost-total"><span>Genel Toplam (KDV Dahil)</span><span>${fmt(b.grandTotal)} ₺</span></div>`;
+
+  el.innerHTML = rows;
+}
+
+function generateTeklifNo(){
+  const year = new Date().getFullYear();
+  const rand = Math.floor(100 + Math.random()*900);
+  const no = 'T-'+year+'-'+String(rand).padStart(3,'0');
+  const el=$('teklif-no');
+  if(el) el.value = no;
+  return no;
 }
 
 // ── stock ──────────────────────────────────────────────────────────────────
@@ -2444,6 +2528,11 @@ function doSaveFile(){
     laborPrice:val('labor-price',300),
     cutSpeed:val('cut-speed',6000),
     setupTime:val('setup-time',0.5),
+    discountPct:val('discount-pct',0),
+    marginPct:val('margin-pct',0),
+    vatPct:val('vat-pct',20),
+    vatMode:sval('vat-mode','haric'),
+    teklifNo:sval('teklif-no',''),
     grainDir:grainDir,
     pieces:pieces,
     ebSettings:ebSettings,
@@ -2592,6 +2681,9 @@ function applyProjectData(d){
   setv('eb-width',d.ebWidth); setv('eb-price',d.ebPrice);
   setv('board-price',d.boardPrice); setv('labor-price',d.laborPrice);
   setv('cut-speed',d.cutSpeed); setv('setup-time',d.setupTime);
+  setv('discount-pct',d.discountPct||0); setv('margin-pct',d.marginPct||0);
+  setv('vat-pct',d.vatPct!==undefined?d.vatPct:20); setv('vat-mode',d.vatMode||'haric');
+  setv('teklif-no',d.teklifNo||'');
   pieces=d.pieces||[];
   ebSettings=d.ebSettings||{};
   stock=d.stock||[];
@@ -2633,6 +2725,9 @@ function loadProject(input){
       setv('eb-width',d.ebWidth); setv('eb-price',d.ebPrice);
       setv('board-price',d.boardPrice); setv('labor-price',d.laborPrice);
       setv('cut-speed',d.cutSpeed); setv('setup-time',d.setupTime);
+      setv('discount-pct',d.discountPct||0); setv('margin-pct',d.marginPct||0);
+      setv('vat-pct',d.vatPct!==undefined?d.vatPct:20); setv('vat-mode',d.vatMode||'haric');
+      setv('teklif-no',d.teklifNo||'');
       // restore state
       pieces=d.pieces||[];
       ebSettings=d.ebSettings||{};
@@ -2779,6 +2874,57 @@ function doExcelExport(){
 }
 
 // ── QR Code Sheet ─────────────────────────────────────────────────────────────
+function doPieceLabels(){
+  if(!boards.length){notify('Önce kesim planı hesaplayın','red');return;}
+  const $m=$('report-menu'); if($m) $m.style.display='none';
+
+  let items=[];
+  let n=1;
+  boards.forEach((b,bi)=>b.placed.forEach(p=>{
+    items.push({n:n++,name:p.name,w:p.w,h:p.h,board:bi+1,rot:p.rot});
+  }));
+
+  const pname = sval('project-name','Proje');
+
+  const labelsHtml = items.map(it=>`
+    <div class="plabel">
+      <div class="plabel-num">#${it.n}</div>
+      <div class="plabel-name">${it.name}</div>
+      <div class="plabel-size">${it.w} × ${it.h} mm</div>
+      <div class="plabel-meta">Plaka #${it.board}${it.rot?' · Döndürülmüş':''}</div>
+      <div class="plabel-proj">${pname}</div>
+    </div>`).join('');
+
+  const printWin = window.open('', '_blank');
+  printWin.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+    <title>Parça Etiketleri — ${pname}</title>
+    <style>
+      @page{ size:A4; margin:10mm; }
+      *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif}
+      body{padding:0}
+      .plabel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm}
+      .plabel{
+        border:1.5px dashed #999;border-radius:4px;padding:8px;
+        display:flex;flex-direction:column;gap:2px;
+        page-break-inside:avoid; min-height:26mm;
+      }
+      .plabel-num{font-size:10px;font-weight:800;color:#3B5BDB;background:#EEF1FF;
+        display:inline-block;padding:2px 6px;border-radius:10px;width:fit-content}
+      .plabel-name{font-size:13px;font-weight:700;color:#111;margin-top:3px}
+      .plabel-size{font-size:16px;font-weight:800;color:#000}
+      .plabel-meta{font-size:9px;color:#666}
+      .plabel-proj{font-size:8px;color:#999;margin-top:auto;border-top:1px dotted #ccc;padding-top:2px}
+      @media print{ .no-print{display:none} }
+      .no-print{position:fixed;top:10px;right:10px;background:#3B5BDB;color:#fff;border:none;
+        padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:700}
+    </style></head><body>
+    <button class="no-print" onclick="window.print()">🖨️ Yazdır</button>
+    <div class="plabel-grid">${labelsHtml}</div>
+    </body></html>`);
+  printWin.document.close();
+  notify('🏷️ '+items.length+' etiket hazırlandı');
+}
+
 function doQRSheet(){
   if(!boards.length){notify('Önce kesim planı hesaplayın','red');return;}
   const $m=$('report-menu'); if($m) $m.style.display='none';
