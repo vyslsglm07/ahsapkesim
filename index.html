@@ -877,7 +877,7 @@ table.dt th.sort-desc::after{content:' ↓';color:var(--blue)}
   <button onclick="showLicenseFromLanding()" style="background:transparent;border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.65);border-radius:50px;padding:10px 30px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;margin-top:10px;margin-bottom:4px;transition:all .2s" onmouseover="this.style.borderColor='rgba(255,255,255,.5)';this.style.color='#fff'" onmouseout="this.style.borderColor='rgba(255,255,255,.2)';this.style.color='rgba(255,255,255,.65)'">🔑 Lisans Kodum Var</button>
 
   <div class="landing-trial-note">Lisans kodu yoksa 10 dakika ücretsiz deneyebilirsiniz</div>
-  <div style="margin-top:20px;font-size:10px;color:rgba(255,255,255,.2)">© 2025 Veysel Sağlam · ahsapkesim.online · v2026.07.01-0728</div>
+  <div style="margin-top:20px;font-size:10px;color:rgba(255,255,255,.2)">© 2025 Veysel Sağlam · ahsapkesim.online · v2026.07.01-0836</div>
 </div>
 
 <!-- SUPPORT BUTTON (shown after entering app) -->
@@ -908,7 +908,8 @@ table.dt th.sort-desc::after{content:' ↓';color:var(--blue)}
       <div style="display:flex;gap:4px">
         <button class="btn btn-sm" id="theme-btn" onclick="toggleTheme()" title="Tema değiştir" style="font-size:14px;padding:3px 7px">🌙</button>
         <button class="btn btn-sm btn-teal" onclick="saveProject()" title="Projeyi kaydet">💾 Kaydet</button>
-        <label class="btn btn-sm" style="cursor:pointer" title="Proje aç">📂 Aç<input type="file" accept=".ahsp,.json" onchange="loadProject(this)" style="display:none"></label>
+        <button class="btn btn-sm" onclick="showOpenMenu()" title="Proje aç">📂 Aç</button>
+<input type="file" id="hidden-file-input" accept=".ahsp,.json" onchange="loadProject(this)" style="display:none">
         <button class="btn btn-sm" onclick="clearAll()" title="Tümünü temizle" style="color:var(--red);border-color:var(--red);background:var(--red-bg)">🗑 Temizle</button>
       </div>
     </div>
@@ -2387,6 +2388,10 @@ function saveProject(){
         <span>⏰ Saat: <strong>${new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}</strong></span>
       </div>
     </div>
+    <div id="cloud-save-option" style="display:none;align-items:center;gap:8px;margin-bottom:14px;background:var(--blue-bg);border-radius:var(--r);padding:10px 12px">
+      <input type="checkbox" id="save-to-cloud" checked style="width:16px;height:16px;cursor:pointer">
+      <label for="save-to-cloud" style="font-size:12px;color:var(--text2);cursor:pointer;flex:1">☁️ Ayrıca buluta kaydet (hesabımla eriş)</label>
+    </div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-blue" style="flex:1;justify-content:center" onclick="doSaveFile()">💾 Kaydet</button>
       <button class="btn" onclick="document.getElementById('save-modal').remove()">İptal</button>
@@ -2402,6 +2407,14 @@ function saveProject(){
   const mc=$('modal-container');
   if(mc) mc.appendChild(modal);
   setTimeout(()=>{ const el=$('save-project-name'); if(el){el.focus();el.select();} },50);
+
+  // Show cloud save option if logged in with Google
+  sbClient.auth.getSession().then(({data:{session}})=>{
+    if(session && session.user && session.user.email){
+      const opt=$('cloud-save-option');
+      if(opt) opt.style.display='flex';
+    }
+  });
 }
 
 function doSaveFile(){
@@ -2438,9 +2451,167 @@ function doSaveFile(){
   a.download=fname+'.ahsp';
   a.click();
 
+  // Save to cloud if checkbox is checked
+  const cloudCheckbox=$('save-to-cloud');
+  if(cloudCheckbox && cloudCheckbox.checked){
+    saveToCloud(pname, data);
+  }
+
   // Close modal
   const modal=$('save-modal'); if(modal) modal.remove();
   notify('✅ Kaydedildi: '+fname+'.ahsp');
+}
+
+async function saveToCloud(projeAdi, data){
+  try{
+    const {data:{session}} = await sbClient.auth.getSession();
+    if(!session || !session.user || !session.user.email) return;
+    const email = session.user.email;
+    const {error} = await sbClient.from('projeler').insert({
+      email: email,
+      proje_adi: projeAdi,
+      veri: data
+    });
+    if(error){
+      console.error('Cloud save error:', error);
+      notify('⚠️ Bulut kaydı başarısız: '+error.message);
+    } else {
+      notify('☁️ Buluta da kaydedildi!');
+    }
+  }catch(e){
+    console.error('Cloud save error:', e);
+  }
+}
+
+async function showOpenMenu(){
+  const {data:{session}} = await sbClient.auth.getSession();
+  const isLoggedIn = session && session.user && session.user.email;
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg';
+  modal.id = 'open-modal';
+  modal.innerHTML = `<div class="modal" style="width:420px;max-height:70vh;overflow-y:auto">
+    <button class="close" onclick="document.getElementById('open-modal').remove()">×</button>
+    <h3 style="margin-bottom:14px">📂 Proje Aç</h3>
+    <button class="btn btn-blue btn-full" style="margin-bottom:14px;justify-content:center" onclick="document.getElementById('hidden-file-input').click();document.getElementById('open-modal').remove()">
+      💻 Bilgisayardan Dosya Seç (.ahsp)
+    </button>
+    ${isLoggedIn ? `
+    <div style="display:flex;align-items:center;gap:10px;margin:14px 0">
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+      <span style="font-size:11px;color:var(--text3)">veya buluttan</span>
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+    </div>
+    <div id="cloud-project-list" style="min-height:60px">
+      <div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">Yükleniyor...</div>
+    </div>
+    ` : `
+    <div style="background:var(--blue-bg);border-radius:var(--r);padding:12px;font-size:11px;color:var(--text2);margin-top:10px">
+      💡 Google ile giriş yaparsanız bulut kayıtlı projelerinizi de görebilirsiniz.
+    </div>
+    `}
+  </div>`;
+
+  const mc=$('modal-container');
+  if(mc) mc.appendChild(modal);
+
+  if(isLoggedIn) loadCloudProjectList(session.user.email);
+}
+
+async function loadCloudProjectList(email){
+  try{
+    const {data, error} = await sbClient
+      .from('projeler')
+      .select('*')
+      .eq('email', email)
+      .order('updated_at', {ascending:false});
+
+    const listEl = $('cloud-project-list');
+    if(!listEl) return;
+
+    if(error || !data || data.length===0){
+      listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">Buluta kayıtlı proje bulunamadı</div>';
+      return;
+    }
+
+    listEl.innerHTML = data.map(p => {
+      const d = new Date(p.updated_at || p.created_at);
+      const dateStr = d.toLocaleDateString('tr-TR') + ' ' + d.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+      const pieceCount = (p.veri.pieces||[]).reduce((s,pc)=>s+pc.qty,0);
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;cursor:pointer" onclick="openCloudProject('${p.id}')" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='transparent'">
+        <div style="font-size:20px">📄</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.proje_adi}</div>
+          <div style="font-size:10px;color:var(--text3)">${pieceCount} parça · ${dateStr}</div>
+        </div>
+        <button onclick="event.stopPropagation();deleteCloudProject('${p.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:4px">🗑</button>
+      </div>`;
+    }).join('');
+  }catch(e){
+    console.error('Load cloud projects error:', e);
+  }
+}
+
+let _cloudProjectsCache = {};
+async function openCloudProject(id){
+  try{
+    const {data, error} = await sbClient.from('projeler').select('*').eq('id', id).single();
+    if(error || !data){ notify('⚠️ Proje yüklenemedi'); return; }
+    applyProjectData(data.veri);
+    const modal=$('open-modal'); if(modal) modal.remove();
+    notify('☁️ "'+data.proje_adi+'" açıldı');
+  }catch(e){
+    console.error('Open cloud project error:', e);
+    notify('⚠️ Proje açılamadı');
+  }
+}
+
+async function deleteCloudProject(id){
+  if(!confirm('Bu bulut projesini silmek istediğinize emin misiniz?')) return;
+  try{
+    const {error} = await sbClient.from('projeler').delete().eq('id', id);
+    if(error){ notify('⚠️ Silinemedi: '+error.message); return; }
+    notify('🗑 Proje silindi');
+    const {data:{session}} = await sbClient.auth.getSession();
+    if(session) loadCloudProjectList(session.user.email);
+  }catch(e){
+    console.error('Delete cloud project error:', e);
+  }
+}
+
+function applyProjectData(d){
+  const setv=(id,v)=>{ const el=$(id); if(el&&v!==undefined) el.value=v; };
+  setv('project-name',d.projectName);
+  setv('bw',d.boardW); setv('bh',d.boardH); setv('kerf',d.kerf);
+  setv('bqty',d.boardQty); setv('board-thickness',d.thickness);
+  setv('eb-width',d.ebWidth); setv('eb-price',d.ebPrice);
+  setv('board-price',d.boardPrice); setv('labor-price',d.laborPrice);
+  setv('cut-speed',d.cutSpeed); setv('setup-time',d.setupTime);
+  pieces=d.pieces||[];
+  ebSettings=d.ebSettings||{};
+  stock=d.stock||[];
+  extraCosts=d.extraCosts||[];
+  grainDir=d.grainDir||'yatay';
+  document.querySelectorAll('#grain-presets .preset').forEach(b=>{
+    const gv=b.textContent.includes('Yatay')?'yatay':b.textContent.includes('Dikey')?'dikey':'yok';
+    b.classList.toggle('active',gv===grainDir);
+  });
+  const th=d.thickness||18;
+  document.querySelectorAll('#thickness-presets .preset').forEach(b=>{
+    b.classList.toggle('active',parseInt(b.textContent)===th);
+  });
+  const ewd=$('eb-width-display'); if(ewd) ewd.textContent=(d.ebWidth||22)+' mm';
+  const eab=$('eb-auto-badge');
+  if(eab) eab.style.display=THICKNESS_BAND[th]===d.ebWidth?'':'none';
+  renderPieceList();
+  renderStockList();
+  renderExtraCosts();
+  const ob=$('opt-btn'); if(ob) ob.disabled=!pieces.length;
+  const cb=$('clear-btn'); if(cb) cb.style.display=pieces.length?'':'none';
+  const cnt=$('piece-count'); if(cnt) cnt.textContent=pieces.reduce((s,p)=>s+p.qty,0);
+  boards=[];
+  hide('result-area'); show('no-result');
+  const ta=$('top-actions'); if(ta) ta.style.display='none';
 }
 
 function loadProject(input){
