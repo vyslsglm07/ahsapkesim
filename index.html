@@ -618,6 +618,7 @@ table.dt th.sort-desc::after{content:' ↓';color:var(--blue)}
 .undo-bar button{background:var(--blue);color:#fff;border:none;border-radius:10px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer}
 .undo-bar button:hover{background:var(--blue-mid)}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <!-- LANDING PAGE -->
@@ -1137,6 +1138,7 @@ table.dt th.sort-desc::after{content:' ↓';color:var(--blue)}
 <div class="watermark">
   <div class="watermark-line1">© Veysel Sağlam</div>
   <div class="watermark-line2">ahsapkesim.online</div>
+  <div class="watermark-line2" style="opacity:.5;font-size:9px">v2026.07.01-0609</div>
 </div>
 <div class="app-footer">
   <div>
@@ -1157,8 +1159,20 @@ table.dt th.sort-desc::after{content:' ↓';color:var(--blue)}
   <div class="trial-card" style="max-width:400px">
     <div style="width:52px;height:52px;margin:0 auto 10px"><svg width="52" height="52" viewBox="0 0 72 72"><rect width="72" height="72" rx="16" fill="#F0FDF4"/><circle cx="36" cy="36" r="28" fill="none" stroke="#16A34A" stroke-width="2.5"/><rect x="33" y="50" width="6" height="10" rx="1.5" fill="#92400E"/><polygon points="36,14 48,34 24,34" fill="#15803D"/><polygon points="36,22 47,38 25,38" fill="#16A34A"/><polygon points="36,30 46,50 26,50" fill="#22C55E"/><path d="M18 52 L22 48 L26 52 L30 48 L34 52 L38 48 L42 52 L46 48 L50 52 L54 48 L58 52" stroke="#15803D" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     <h2 style="font-size:20px">Ahşap Kesim Pro</h2>
-    <p style="margin-bottom:16px">Lisans kodunuzu girerek devam edin.<br>
+    <p style="margin-bottom:16px">Google hesabınızla giriş yapın.<br>
     Lisansınız yoksa bizimle iletişime geçin.</p>
+
+    <button onclick="signInWithGoogle()" style="width:100%;background:#fff;color:#1a1d2e;border:1.5px solid #dcdfe6;border-radius:10px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px;font-family:'Inter',sans-serif">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
+      Google ile Giriş Yap
+    </button>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+      <span style="font-size:11px;color:var(--sub)">veya kod ile</span>
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+    </div>
+
     <input class="lic-input" id="lic-input" maxlength="17" placeholder="SRN-XXXXXXXX-XXXX"
       oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9-]/g,'')"
       onkeydown="if(event.key==='Enter')checkLicense()">
@@ -3101,6 +3115,72 @@ async function checkLicense(){
   }
 }
 
+// ── Supabase & Google Auth ────────────────────────────────────────────────────
+const SUPABASE_URL = 'https://zvxmciyxdmswzbotrbcn.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_vFMCgzbb70Pn_aOydOR7dw_Cdcx1rCd';
+const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function signInWithGoogle(){
+  const { error } = await sbClient.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin }
+  });
+  if(error){
+    const status=$('lic-status');
+    if(status){status.style.color='var(--red)';status.textContent='Google girişi başarısız: '+error.message;}
+  }
+}
+
+async function checkGoogleLicense(){
+  try{
+    const { data: { session } } = await sbClient.auth.getSession();
+    if(!session || !session.user || !session.user.email) return null;
+    const email = session.user.email;
+    const { data, error } = await sbClient
+      .from('lisanslar')
+      .select('*')
+      .eq('email', email)
+      .single();
+    if(error || !data) return { email, valid:false, msg:'Bu Gmail hesabı için lisans bulunamadı. WhatsApp\'tan iletişime geçin.' };
+    const expiry = new Date(data.son_kullanma + 'T23:59:59');
+    if(new Date() > expiry) return { email, valid:false, msg:'Lisans süresi dolmuş ('+expiry.toLocaleDateString('tr-TR')+')', expired:true };
+    const daysLeft = Math.ceil((expiry - new Date()) / (1000*60*60*24));
+    return { email, valid:true, expiry, daysLeft, paket:data.paket, msg:'✅ '+email+' — '+daysLeft+' gün kaldı' };
+  }catch(e){
+    console.error('Google license check error:', e);
+    return null;
+  }
+}
+
+async function initGoogleAuth(){
+  const result = await checkGoogleLicense();
+  if(!result) return false; // not logged in with Google
+  if(result.valid){
+    // Valid Google license — enter app
+    const landing=$('landing'); if(landing) landing.style.display='none';
+    const gate=$('license-gate'); if(gate) gate.style.display='none';
+    const sb=$('support-btn'); if(sb) sb.style.display='flex';
+    const app=document.querySelector('.app'); if(app) app.style.pointerEvents='';
+    const overlay=$('trial-overlay'); if(overlay) overlay.style.display='none';
+    const bar=$('trial-bar');
+    if(bar){
+      bar.style.display='flex';
+      bar.style.background='linear-gradient(135deg,#064e3b,#065f46)';
+      bar.innerHTML='<div style="display:flex;align-items:center;gap:8px;font-size:11px"><span>✅ '+result.email+'</span><span style="opacity:.7">('+result.daysLeft+' gün kaldı)</span></div><span style="font-size:10px;opacity:.6">Ahşap Kesim Pro</span>';
+    }
+    return true;
+  } else {
+    // Logged in with Google but no valid license
+    const gate=$('license-gate');
+    if(gate) gate.style.display='flex';
+    const status=$('lic-status');
+    if(status){status.style.color='var(--red)';status.textContent=result.msg;}
+    const landing=$('landing'); if(landing) landing.style.display='none';
+    const app=document.querySelector('.app'); if(app) app.style.pointerEvents='none';
+    return true; // handled — don't fall through to trial
+  }
+}
+
 // Cookie helper functions for backup storage
 function setCookie(name,value,days){
   const d=new Date(); d.setTime(d.getTime()+(days*24*60*60*1000));
@@ -3117,6 +3197,10 @@ function getCookie(name){
 }
 
 async function initLicense(){
+  // First check Google auth session
+  const googleHandled = await initGoogleAuth();
+  if(googleHandled) return; // Google auth took care of it
+
   // Check saved license on every page load
   try{
     // Try localStorage first, then cookie as backup
@@ -3436,18 +3520,16 @@ function showTrialOverlay(){
 
 // Start trial when user first interacts (adds a piece or runs optimization)
 const _origAddPiece2 = window.addPiece;
-document.addEventListener('click', function startOnClick(){
-  // Only start trial if no valid license
+document.addEventListener('click', async function startOnClick(){
+  document.removeEventListener('click', startOnClick);
+  // Only start trial if no valid license (SRN or Google)
   try{
     const saved=localStorage.getItem(LIC_STORAGE_KEY);
-    if(saved){
-      // Has a saved license — don't start trial, let initLicense handle it
-      document.removeEventListener('click', startOnClick);
-      return;
-    }
+    if(saved) return; // Has a saved SRN license
+    const gResult = await checkGoogleLicense();
+    if(gResult) return; // Logged in with Google (valid or not — don't start trial)
   }catch(e){}
   startTrial();
-  document.removeEventListener('click', startOnClick);
 }, {once:true});
 
 // ── Undo / Redo ────────────────────────────────────────────────────────────
