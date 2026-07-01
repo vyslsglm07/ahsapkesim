@@ -902,7 +902,7 @@ table.dt th.sort-desc::after{content:' ↓';color:var(--blue)}
 </svg>
         <div>
           <div style="font-size:13px;font-weight:700;letter-spacing:-.3px">Ahşap Kesim</div>
-          <div style="font-size:9px;font-weight:600;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin-top:-1px">Pro</div>
+          <div style="font-size:9px;font-weight:600;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin-top:-1px">Pro <span style="opacity:.5;text-transform:none;font-weight:400;letter-spacing:0">· v2026.07.01-0630</span></div>
         </div>
       </div>
       <div style="display:flex;gap:4px">
@@ -1138,7 +1138,6 @@ table.dt th.sort-desc::after{content:' ↓';color:var(--blue)}
 <div class="watermark">
   <div class="watermark-line1">© Veysel Sağlam</div>
   <div class="watermark-line2">ahsapkesim.online</div>
-  <div class="watermark-line2" style="opacity:.5;font-size:9px">v2026.07.01-0609</div>
 </div>
 <div class="app-footer">
   <div>
@@ -3117,7 +3116,7 @@ async function checkLicense(){
 
 // ── Supabase & Google Auth ────────────────────────────────────────────────────
 const SUPABASE_URL = 'https://zvxmciyxdmswzbotrbcn.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_vFMCgzbb70Pn_aOydOR7dw_Cdcx1rCd';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2eG1jaXl4ZG1zd3pib3RyYmNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4NjE4MzgsImV4cCI6MjA5ODQzNzgzOH0.lr8enaisZd7uJ7nOoCtBVxVYqFgzKL6C7-uEyRl7ITc';
 const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
 });
